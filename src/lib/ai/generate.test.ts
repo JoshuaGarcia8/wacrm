@@ -128,6 +128,33 @@ describe('generateReply — OpenAI', () => {
   })
 })
 
+describe('generateReply — Groq', () => {
+  it('calls the OpenAI-compatible Groq endpoint with the Groq base URL', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        choices: [{ message: { content: 'Groq says hola!' } }],
+        usage: { prompt_tokens: 12, completion_tokens: 4, total_tokens: 16 },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'groq', model: 'llama-3.3-70b-versatile', apiKey: 'gsk-test' }),
+      systemPrompt: 'sys',
+      messages: [{ role: 'user', content: 'Hi' }],
+    })
+
+    expect(res).toEqual({
+      text: 'Groq says hola!',
+      handoff: false,
+      usage: { promptTokens: 12, completionTokens: 4, totalTokens: 16 },
+    })
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('api.groq.com/openai/v1')
+    expect(opts.headers.Authorization).toBe('Bearer gsk-test')
+  })
+})
+
 describe('generateReply — Anthropic', () => {
   it('calls the messages endpoint with the version header and parses text blocks', async () => {
     const fetchMock = vi.fn().mockResolvedValue(

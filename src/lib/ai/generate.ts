@@ -9,6 +9,8 @@ import { HANDOFF_SENTINEL, aiRequestTimeoutMs } from './defaults'
 import { generateOpenAi } from './providers/openai'
 import { generateAnthropic } from './providers/anthropic'
 
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+
 export interface GenerateArgs {
   config: AiConfig
   /** Fully-built system prompt (see `buildSystemPrompt`). */
@@ -37,6 +39,13 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
   switch (config.provider) {
     case 'openai':
       result = await generateOpenAi(providerArgs)
+      break
+    case 'groq':
+      result = await generateOpenAi({
+        ...providerArgs,
+        baseUrl: GROQ_URL,
+        providerLabel: 'Groq',
+      })
       break
     case 'anthropic':
       result = await generateAnthropic(providerArgs)
