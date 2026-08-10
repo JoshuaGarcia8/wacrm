@@ -27,9 +27,14 @@ export async function POST(request: Request) {
     }
 
     const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic' && provider !== 'groq') {
+    if (
+      provider !== 'openai' &&
+      provider !== 'anthropic' &&
+      provider !== 'groq' &&
+      provider !== 'gemini'
+    ) {
       return NextResponse.json(
-        { error: 'provider must be "openai", "anthropic", or "groq"' },
+        { error: 'provider must be "openai", "anthropic", "groq", or "gemini"' },
         { status: 400 },
       )
     }

@@ -10,6 +10,7 @@ import { generateOpenAi } from './providers/openai'
 import { generateAnthropic } from './providers/anthropic'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
 
 export interface GenerateArgs {
   config: AiConfig
@@ -45,6 +46,13 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
         ...providerArgs,
         baseUrl: GROQ_URL,
         providerLabel: 'Groq',
+      })
+      break
+    case 'gemini':
+      result = await generateOpenAi({
+        ...providerArgs,
+        baseUrl: GEMINI_URL,
+        providerLabel: 'Google Gemini',
       })
       break
     case 'anthropic':

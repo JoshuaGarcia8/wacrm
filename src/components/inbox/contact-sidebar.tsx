@@ -15,6 +15,8 @@ import {
   DollarSign,
   StickyNote,
   Plus,
+  CreditCard,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,6 +38,13 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
   const [tags, setTags] = useState<(Tag & { contact_tag_id: string })[]>([]);
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+
+  // MercadoPago Cobros state
+  const [mpTitle, setMpTitle] = useState("");
+  const [mpAmount, setMpAmount] = useState("");
+  const [mpLoading, setMpLoading] = useState(false);
+  const [mpUrl, setMpUrl] = useState<string | null>(null);
+  const [mpCopied, setMpCopied] = useState(false);
 
   const fetchContactData = useCallback(async () => {
     if (!contact) return;
@@ -118,6 +127,39 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
     }
     setAddingNote(false);
   }, [contact, newNote, accountId]);
+
+  const handleCreateMpPayment = async () => {
+    if (!mpAmount || Number(mpAmount) <= 0) return;
+    setMpLoading(true);
+    setMpUrl(null);
+    try {
+      const res = await fetch("/api/payments/mercadopago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: mpTitle.trim() || "Cobro de Servicio",
+          amount: Number(mpAmount),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.init_point) {
+        setMpUrl(data.init_point);
+      } else {
+        alert(data.error || "Error al generar link de MercadoPago");
+      }
+    } catch {
+      alert("Error al conectar con MercadoPago");
+    } finally {
+      setMpLoading(false);
+    }
+  };
+
+  const handleCopyMpUrl = async () => {
+    if (!mpUrl) return;
+    await navigator.clipboard.writeText(mpUrl);
+    setMpCopied(true);
+    setTimeout(() => setMpCopied(false), 2000);
+  };
 
   if (!contact) {
     return (
@@ -247,6 +289,70 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="my-4 border-t border-border" />
+
+          {/* MercadoPago Link Generator */}
+          <div>
+            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <CreditCard className="h-3 w-3 text-blue-500" />
+              MercadoPago (Cobro)
+            </div>
+            <div className="mt-2 rounded-lg bg-muted p-3 space-y-2">
+              <input
+                type="text"
+                value={mpTitle}
+                onChange={(e) => setMpTitle(e.target.value)}
+                placeholder="Concepto (ej. Consulta)"
+                className="w-full rounded border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={mpAmount}
+                  onChange={(e) => setMpAmount(e.target.value)}
+                  placeholder="Monto ($)"
+                  className="w-full rounded border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleCreateMpPayment}
+                  disabled={!mpAmount || Number(mpAmount) <= 0 || mpLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3"
+                >
+                  {mpLoading ? "..." : "Link"}
+                </Button>
+              </div>
+
+              {mpUrl && (
+                <div className="mt-2 space-y-1.5 pt-2 border-t border-border/50">
+                  <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                    ¡Link generado con éxito!
+                  </p>
+                  <div className="flex gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCopyMpUrl}
+                      className="flex-1 text-[11px] h-7 gap-1"
+                    >
+                      {mpCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                      {mpCopied ? "Copiado" : "Copiar Link"}
+                    </Button>
+                    <a
+                      href={mpUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center rounded border border-border bg-background px-2 text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
               )}
             </div>
           </div>
