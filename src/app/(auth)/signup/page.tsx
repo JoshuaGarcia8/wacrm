@@ -64,7 +64,8 @@ function SignupPageInner() {
     // email back at the join page so the user can accept after
     // verifying. Without a token, Supabase uses its default
     // redirect (the app root).
-    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const callbackUrl = new URL("/auth/callback", siteUrl);
     callbackUrl.searchParams.set(
       "next",
       inviteToken
